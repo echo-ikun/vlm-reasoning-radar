@@ -1,0 +1,45 @@
+version: 0.1.0
+sources:
+  - id: arxiv
+    enabled: true
+    role: discovery
+    notes: Search new submissions and revisions; use arXiv ID as a deduplication key.
+  - id: openreview
+    enabled: true
+    role: discovery
+    notes: Track public conference submissions, revisions, and discussion when available.
+  - id: cvf-open-access
+    enabled: true
+    role: venue-verification
+    notes: Verify CVPR, ICCV, and WACV publication metadata.
+  - id: acl-anthology
+    enabled: true
+    role: venue-verification
+    notes: Verify ACL-family publication metadata and canonical PDF links.
+  - id: crossref
+    enabled: true
+    role: metadata
+    notes: Resolve DOI and publication metadata.
+  - id: openalex
+    enabled: true
+    role: citation-neighborhood
+    notes: Expand from seed papers, authors, institutions, and cited works.
+  - id: semantic-scholar
+    enabled: true
+    role: citation-neighborhood
+    notes: Use as a secondary citation and metadata source; do not trust it as the sole source.
+  - id: github
+    enabled: true
+    role: code-discovery
+    notes: Find official code, datasets, model releases, and project pages.
+
+deduplication_order:
+  - arxiv_id
+  - doi
+  - normalized_title_and_first_author
+
+source_policy:
+  - Prefer paper PDFs, official proceedings, and official repositories for technical claims.
+  - Record both first-submission and latest-revision dates when available.
+  - Do not treat citation count or social popularity as evidence of correctness.
+

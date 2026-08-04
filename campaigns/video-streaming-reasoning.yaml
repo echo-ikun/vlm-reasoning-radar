@@ -1,0 +1,28 @@
+id: video-streaming-reasoning
+name: Video and Streaming Reasoning
+status: scouting
+priority: 1
+venue_fit: [CVPR, ACL]
+research_questions:
+  - How can a model reason causally without access to future frames?
+  - What should be stored, compressed, retrieved, or forgotten in a long stream?
+  - When should a model answer, wait, ask for clarification, or act?
+positive_queries:
+  - streaming video reasoning VLM
+  - online video understanding MLLM
+  - long video memory reasoning
+  - proactive video language model
+  - causal video question answering
+negative_terms:
+  - video generation
+  - streaming codec
+  - generic action recognition
+preferred_tags:
+  branches: [memory-interaction, reasoning-core, efficiency-systems, evaluation]
+  modality: [video, streaming-video, omni]
+opportunity_signals:
+  - offline evaluation used to claim online capability
+  - memory compression without evidence-retention analysis
+  - answer accuracy measured without response timing
+  - incompatible definitions of streaming or causality
+

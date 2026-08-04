@@ -1,0 +1,27 @@
+id: multimodal-reasoning-post-training
+name: Multimodal Reasoning Post-training
+status: scouting
+priority: 1
+venue_fit: [CVPR, ACL]
+research_questions:
+  - Which post-training signals improve visually grounded reasoning instead of answer style?
+  - When do SFT, process supervision, distillation, and RLVR produce different gains?
+  - How can reasoning improvements be transferred across model sizes and modalities?
+positive_queries:
+  - multimodal reasoning post-training
+  - vision language model RLVR
+  - visual reasoning process supervision
+  - multimodal on-policy distillation
+  - vision language test-time scaling
+negative_terms:
+  - video generation
+  - text-only reasoning
+preferred_tags:
+  branches: [learning-post-training, reasoning-core, evaluation]
+  modality: [image, multi-image, video]
+opportunity_signals:
+  - contradictory findings under comparable models or benchmarks
+  - gains without groundedness or process-level evaluation
+  - training recipes with public data and reproducible baselines
+  - methods that work for text reasoning but fail under visual evidence
+

@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/paper.schema.json",
+  "title": "VLM Reasoning Radar Paper",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "authors",
+    "first_seen",
+    "primary_branch",
+    "campaigns",
+    "review_status",
+    "evidence_level",
+    "summary",
+    "scores",
+    "verdict"
+  ],
+  "properties": {
+    "id": {"type": "string", "description": "Prefer arxiv:<id> or doi:<doi>."},
+    "title": {"type": "string", "minLength": 1},
+    "authors": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "first_seen": {"type": "string", "format": "date"},
+    "submitted": {"type": ["string", "null"], "format": "date"},
+    "revised": {"type": ["string", "null"], "format": "date"},
+    "venue": {"type": ["string", "null"]},
+    "arxiv_id": {"type": ["string", "null"]},
+    "doi": {"type": ["string", "null"]},
+    "urls": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "format": "uri"}
+    },
+    "primary_branch": {"type": "string"},
+    "leaf_topics": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "campaigns": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "tags": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "array",
+        "items": {"type": "string"},
+        "uniqueItems": true
+      }
+    },
+    "assets": {
+      "type": "object",
+      "properties": {
+        "code": {"type": ["string", "null"], "format": "uri"},
+        "dataset": {"type": ["string", "null"], "format": "uri"},
+        "model": {"type": ["string", "null"], "format": "uri"},
+        "pdf": {"type": ["string", "null"], "format": "uri"}
+      },
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "problem": {"type": "string"},
+        "method": {"type": "string"},
+        "evidence": {"type": "string"},
+        "relationship": {"type": "string"},
+        "limitations": {"type": "string"}
+      },
+      "additionalProperties": false
+    },
+    "review_status": {
+      "enum": ["inbox", "skimmed", "deep-read", "reproduced", "cited", "rejected"]
+    },
+    "evidence_level": {
+      "enum": ["abstract-only", "full-paper-checked", "code-checked", "reproduced"]
+    },
+    "scores": {
+      "type": "object",
+      "required": ["relevance", "novelty_gap", "feasibility", "evidence_quality", "asset_availability", "total"],
+      "properties": {
+        "relevance": {"type": "number", "minimum": 0, "maximum": 4},
+        "novelty_gap": {"type": "number", "minimum": 0, "maximum": 4},
+        "feasibility": {"type": "number", "minimum": 0, "maximum": 4},
+        "evidence_quality": {"type": "number", "minimum": 0, "maximum": 4},
+        "asset_availability": {"type": "number", "minimum": 0, "maximum": 4},
+        "total": {"type": "number", "minimum": 0, "maximum": 4}
+      },
+      "additionalProperties": false
+    },
+    "verdict": {"enum": ["must-read", "watchlist", "rejected"]},
+    "rejection_reason": {"type": ["string", "null"]},
+    "zotero_key": {"type": ["string", "null"]},
+    "notes": {"type": "string"}
+  }
+}

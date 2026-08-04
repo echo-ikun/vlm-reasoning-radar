@@ -1,0 +1,50 @@
+version: 0.1.0
+timezone: Asia/Shanghai
+schedule_local: "07:00"
+lookback_days: 3
+max_candidates_per_run: 60
+
+campaign_budget:
+  focused_campaigns: 0.8
+  peripheral_radar: 0.2
+
+scoring:
+  dimensions:
+    relevance:
+      max: 4
+      weight: 0.30
+    novelty_gap:
+      max: 4
+      weight: 0.25
+    feasibility:
+      max: 4
+      weight: 0.25
+    evidence_quality:
+      max: 4
+      weight: 0.10
+    asset_availability:
+      max: 4
+      weight: 0.10
+  thresholds:
+    must_read: 3.20
+    watchlist: 2.30
+  conference_mode_dimensions:
+    - novelty_gap
+    - feasibility
+    - benchmark_readiness
+    - competition_density
+    - venue_fit
+    - extension_path
+
+output:
+  must_read_max: 3
+  watchlist_max: 8
+  include_rejected_count: true
+  include_rejection_examples_max: 3
+  write_digest: true
+  mutate_paper_database: true
+  download_pdf: false
+  update_zotero: false
+  git_commit: false
+  external_publish: false
+

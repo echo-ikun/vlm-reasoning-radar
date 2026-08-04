@@ -1,0 +1,109 @@
+version: 0.1.0
+updated: 2026-08-04
+root:
+  id: vlm-reasoning
+  name: VLM Reasoning
+  operational_definition: >-
+    A work is in scope when visual evidence participates in a non-trivial inference,
+    decision, planning, or verification process. Pure perception, captioning, or
+    application papers are excluded unless they introduce or diagnose a reasoning
+    bottleneck relevant to the tree.
+  branches:
+    - id: visual-evidence-acquisition
+      name: Visual Evidence Acquisition
+      questions:
+        - How does a model identify the evidence required for reasoning?
+        - Can the model actively acquire missing evidence?
+      leaves:
+        - grounding-ocr-detection
+        - active-perception-crop-zoom-search
+        - frame-region-token-selection
+
+    - id: reasoning-core
+      name: Reasoning Core
+      questions:
+        - Which reasoning operations are difficult after perception is controlled?
+        - Is the generated rationale grounded in the visual evidence?
+      leaves:
+        - spatial-relational
+        - temporal-causal
+        - compositional-multihop
+        - math-science-chart-document
+        - knowledge-grounded
+
+    - id: memory-interaction
+      name: Memory and Interaction
+      questions:
+        - What information should persist across long contexts or turns?
+        - When should an online model answer, wait, ask, or act?
+      leaves:
+        - long-video-memory
+        - streaming-online-reasoning
+        - multi-turn-interaction
+        - proactive-response-timing
+        - embodied-vla-agent
+
+    - id: learning-post-training
+      name: Learning and Post-training
+      questions:
+        - Which supervision signal improves grounded reasoning rather than style?
+        - How do training recipes transfer across models, modalities, and tasks?
+      leaves:
+        - reasoning-data-sft
+        - process-supervision
+        - distillation
+        - rl-rlvr
+        - self-improvement-test-time-scaling
+
+    - id: evaluation
+      name: Evaluation
+      questions:
+        - Does a benchmark measure reasoning instead of perception or memorization?
+        - Are gains robust, calibrated, and reproducible?
+      leaves:
+        - benchmarks
+        - groundedness-faithfulness
+        - robustness-calibration
+        - contamination-shortcuts
+
+    - id: efficiency-systems
+      name: Efficiency and Systems
+      questions:
+        - Which evidence can be compressed without harming reasoning?
+        - What accuracy-latency-memory trade-off is demonstrated?
+      leaves:
+        - visual-token-compression
+        - kv-cache-retrieval
+        - latency-throughput
+        - edge-realtime-deployment
+
+tag_axes:
+  modality: [image, multi-image, video, streaming-video, omni]
+  stage: [data, pretraining, sft, post-training, inference, evaluation, systems]
+  method:
+    - chain-of-thought
+    - interleaved-reasoning
+    - visual-search
+    - verifier
+    - tool-use
+    - memory
+    - retrieval
+    - distillation
+    - reinforcement-learning
+    - test-time-scaling
+  asset: [paper, code, dataset, model, project-page]
+  review_status: [inbox, skimmed, deep-read, reproduced, cited, rejected]
+  evidence_level: [abstract-only, full-paper-checked, code-checked, reproduced]
+
+inclusion_rules:
+  - Visual evidence must be necessary to the claimed reasoning contribution.
+  - The work must add a mechanism, dataset, evaluation, or substantive diagnosis.
+  - The primary branch is chosen by the paper's central research question.
+  - Cross-cutting properties are represented by tags, not duplicate entries.
+
+exclusion_rules:
+  - Pure captioning, recognition, detection, or generation without a reasoning claim.
+  - Application-only papers without a reusable reasoning insight.
+  - Papers whose claimed gain cannot be separated from extra data or model scale.
+  - Duplicate arXiv, venue, workshop, or project-page versions of the same work.
+

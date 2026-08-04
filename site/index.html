@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A decision-oriented research radar for grounded VLM reasoning.">
+    <meta name="theme-color" content="#0f172a">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="VLM Reasoning Radar">
+    <meta property="og:description" content="Find the gap. Not just the paper.">
+    <meta property="og:url" content="https://echo-ikun.github.io/vlm-reasoning-radar/">
+    <meta property="og:image" content="https://echo-ikun.github.io/vlm-reasoning-radar/og.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="VLM Reasoning Radar">
+    <meta name="twitter:description" content="Find the gap. Not just the paper.">
+    <meta name="twitter:image" content="https://echo-ikun.github.io/vlm-reasoning-radar/og.png">
+    <title>VLM Reasoning Radar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+    <link rel="alternate" type="application/rss+xml" title="VLM Reasoning Radar" href="./feed.xml">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="VLM Reasoning Radar home">
+          <span class="brand-mark">VR</span>
+          <span>VLM Reasoning Radar</span>
+        </a>
+        <nav class="topnav" aria-label="Primary navigation">
+          <a href="#papers">Papers</a>
+          <a href="#signals">Signals</a>
+          <a href="https://github.com/echo-ikun/vlm-reasoning-radar">GitHub</a>
+          <a class="rss-link" href="./feed.xml">RSS</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow"><span class="live-dot"></span> DAILY RESEARCH INTELLIGENCE</p>
+            <h1>Find the gap.<br><em>Not just the paper.</em></h1>
+            <p class="hero-intro">面向 CVPR / ACL 冲刺的 VLM 推理雷达。追踪视觉证据、后训练、视频推理与 agent，而不是堆积一份永远读不完的列表。</p>
+            <div class="hero-actions">
+              <a class="primary-button" href="#papers">Explore papers</a>
+              <a class="text-button" id="digest-link" href="#signals">Read latest digest <span>↗</span></a>
+            </div>
+          </div>
+          <aside class="signal-card" id="signals">
+            <div class="signal-card-header">
+              <span>Latest signal</span>
+              <time id="digest-date">Loading</time>
+            </div>
+            <p class="signal-lead" id="signal-lead">正在装载最新研究判断…</p>
+            <div class="signal-list" id="signal-list"></div>
+          </aside>
+        </section>
+
+        <section class="metrics" aria-label="Radar metrics">
+          <div class="metric"><strong id="paper-count">—</strong><span>Papers tracked</span></div>
+          <div class="metric"><strong id="must-read-count">—</strong><span>Must read</span></div>
+          <div class="metric"><strong id="campaign-count">—</strong><span>Active campaigns</span></div>
+          <div class="metric"><strong>07:00</strong><span>Daily refresh · CST</span></div>
+        </section>
+
+        <section class="paper-section" id="papers">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">EVIDENCE, METHODS, OPPORTUNITIES</p>
+              <h2>Research stream</h2>
+            </div>
+            <p>优先展示可能形成研究问题的工作。所有技术判断都标注当前证据级别。</p>
+          </div>
+
+          <div class="filters">
+            <label class="search-box">
+              <span aria-hidden="true">⌕</span>
+              <input id="search-input" type="search" placeholder="Search paper, author, method…" autocomplete="off">
+            </label>
+            <div class="select-wrap">
+              <label for="verdict-filter">Priority</label>
+              <select id="verdict-filter">
+                <option value="all">All priorities</option>
+                <option value="must-read">Must read</option>
+                <option value="watchlist">Watchlist</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="campaign-filters" id="campaign-filters" aria-label="Campaign filters"></div>
+          <div class="result-meta"><span id="result-count">0 papers</span><span id="last-updated"></span></div>
+          <div class="paper-grid" id="paper-grid" aria-live="polite"></div>
+          <div class="empty-state" id="empty-state" hidden>No papers match this view.</div>
+        </section>
+      </main>
+
+      <footer>
+        <p>Curated for decisions, not volume.</p>
+        <div><a href="https://github.com/echo-ikun/vlm-reasoning-radar">Source</a><a href="./feed.xml">RSS</a></div>
+      </footer>
+    </div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

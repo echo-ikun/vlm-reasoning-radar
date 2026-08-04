@@ -1,0 +1,27 @@
+id: agentic-visual-reasoning
+name: Agentic Visual Reasoning
+status: scouting
+priority: 1
+venue_fit: [CVPR, ACL]
+research_questions:
+  - Can a VLM decide what visual evidence to inspect next?
+  - When does tool use improve reasoning rather than hide perception failures?
+  - How should visual search and planning be trained and evaluated?
+positive_queries:
+  - agentic visual reasoning
+  - active perception vision language model
+  - visual tool use reasoning
+  - image zoom crop search VLM
+  - multimodal agent planning
+negative_terms:
+  - image generation agent
+  - GUI agent without visual reasoning analysis
+preferred_tags:
+  branches: [visual-evidence-acquisition, memory-interaction, reasoning-core]
+  modality: [image, multi-image, video]
+opportunity_signals:
+  - tool-use gains without matched compute controls
+  - no evaluation of evidence-seeking trajectories
+  - expensive agent loops that can be replaced by learned policies
+  - benchmarks with inspectable failure decomposition
+

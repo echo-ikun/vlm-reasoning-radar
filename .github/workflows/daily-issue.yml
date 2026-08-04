@@ -1,0 +1,82 @@
+name: Publish Daily Radar Issue
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "digests/*.md"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Create or update today's radar issue
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require("fs");
+            const path = require("path");
+
+            const digests = fs.readdirSync("digests")
+              .filter((name) => /^\d{4}-\d{2}-\d{2}\.md$/.test(name))
+              .sort();
+
+            if (digests.length === 0) {
+              core.notice("No digest found; nothing to publish.");
+              return;
+            }
+
+            const filename = digests.at(-1);
+            const date = filename.replace(/\.md$/, "");
+            const marker = `<!-- vlm-radar:${date} -->`;
+            const title = `VLM Reasoning Radar · ${date}`;
+            const source = fs.readFileSync(path.join("digests", filename), "utf8");
+            const siteUrl = `https://${context.repo.owner}.github.io/${context.repo.repo}/`;
+            const repoUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}`;
+            const body = [
+              marker,
+              "",
+              source.slice(0, 55000),
+              "",
+              "---",
+              `[Open the radar site](${siteUrl}) · [View source digest](${repoUrl}/blob/main/digests/${filename})`,
+            ].join("\n");
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "all",
+              per_page: 100,
+            });
+            const existing = issues.find((issue) =>
+              !issue.pull_request && issue.body && issue.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                title,
+                body,
+                state: "open",
+                assignees: [context.repo.owner],
+              });
+              core.notice(`Updated issue #${existing.number}.`);
+            } else {
+              const created = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                assignees: [context.repo.owner],
+              });
+              core.notice(`Created issue #${created.data.number}.`);
+            }

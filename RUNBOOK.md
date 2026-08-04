@@ -10,7 +10,7 @@
 6. 按 `config/radar.yaml` 评分，生成 Must Read、Watchlist 和排除统计。
 7. 将新记录追加到 `data/papers.jsonl`，将日报写入 `digests/YYYY-MM-DD.md`。
 8. 运行 `python3 scripts/validate_radar.py`；校验失败时修复本轮数据，不得留下损坏的 JSONL。
-9. 不自动下载 PDF、不写 Zotero、不提交 Git、不向外部平台发布，除非配置和用户授权发生变化。
+9. 不自动下载 PDF、不写 Zotero。日报与数据校验通过后，运行 `python3 scripts/build_site.py`，仅提交本轮产生的雷达数据、日报和站点派生文件；有变更时提交到当前 `main` 分支并推送到 `origin`。GitHub Pages 与 Daily Radar Issue 由 Actions 自动发布。
 
 ## 摘要规范
 

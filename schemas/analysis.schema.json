@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/analysis.schema.json",
+  "title": "VLM Reasoning Radar Deep Analysis",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "paper_id",
+    "paper_version",
+    "reviewed_on",
+    "evidence_level",
+    "source_scope",
+    "decision",
+    "task_fingerprint",
+    "models",
+    "data_ledger",
+    "compute_ledger",
+    "method_decomposition",
+    "benchmark_audit",
+    "assets",
+    "lineage",
+    "audit_flags",
+    "judgment",
+    "reuse_ideas",
+    "next_action"
+  ],
+  "properties": {
+    "paper_id": {"type": "string", "minLength": 1},
+    "paper_version": {"type": "string", "minLength": 1},
+    "reviewed_on": {"type": "string", "format": "date"},
+    "evidence_level": {"enum": ["full-paper-checked", "code-checked", "reproduced"]},
+    "source_scope": {"type": "array", "items": {"type": "string"}, "minItems": 1, "uniqueItems": true},
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["one_liner", "surface_claim", "de_narrated", "why_it_matters", "bottom_line"],
+      "properties": {
+        "one_liner": {"type": "string"},
+        "surface_claim": {"type": "string"},
+        "de_narrated": {"type": "string"},
+        "why_it_matters": {"type": "string"},
+        "bottom_line": {"type": "string"}
+      }
+    },
+    "task_fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["problem_type", "stage", "modalities", "inputs", "outputs", "task_families"],
+      "properties": {
+        "problem_type": {"type": "string"},
+        "stage": {"type": "string"},
+        "modalities": {"type": "array", "items": {"type": "string"}},
+        "inputs": {"type": "array", "items": {"type": "string"}},
+        "outputs": {"type": "array", "items": {"type": "string"}},
+        "task_families": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "models": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "size", "role", "notes"],
+        "properties": {
+          "name": {"type": "string"},
+          "size": {"type": "string"},
+          "role": {"type": "string"},
+          "notes": {"type": "string"}
+        }
+      }
+    },
+    "data_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["training_data", "evaluation_data", "new_dataset", "new_benchmark"],
+      "properties": {
+        "training_data": {"type": "string"},
+        "evaluation_data": {"type": "array", "items": {"type": "string"}},
+        "new_dataset": {"type": "boolean"},
+        "new_benchmark": {"type": "boolean"}
+      }
+    },
+    "compute_ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["training", "generation_budget", "decode", "hardware", "reported_cost"],
+      "properties": {
+        "training": {"type": "string"},
+        "generation_budget": {"type": "string"},
+        "decode": {"type": "string"},
+        "hardware": {"type": "string"},
+        "reported_cost": {"type": "string"}
+      }
+    },
+    "method_decomposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pipeline", "true_delta", "borrowed_or_prior", "hidden_costs"],
+      "properties": {
+        "pipeline": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+        "true_delta": {"type": "string"},
+        "borrowed_or_prior": {"type": "array", "items": {"type": "string"}},
+        "hidden_costs": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "benchmark_audit": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "capability", "sample_size", "metric", "main_result", "our_read"],
+        "properties": {
+          "name": {"type": "string"},
+          "capability": {"type": "string"},
+          "sample_size": {"type": "string"},
+          "metric": {"type": "string"},
+          "main_result": {"type": "string"},
+          "our_read": {"type": "string"}
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["paper", "pdf", "code_claimed", "code_url", "code_verified", "code_status"],
+      "properties": {
+        "paper": {"type": "string", "format": "uri"},
+        "pdf": {"type": "string", "format": "uri"},
+        "code_claimed": {"type": "boolean"},
+        "code_url": {"type": ["string", "null"], "format": "uri"},
+        "code_verified": {"type": "boolean"},
+        "code_status": {"type": "string"}
+      }
+    },
+    "lineage": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "url", "relationship", "our_read", "confidence"],
+        "properties": {
+          "title": {"type": "string"},
+          "url": {"type": "string", "format": "uri"},
+          "relationship": {"type": "string"},
+          "our_read": {"type": "string"},
+          "confidence": {"enum": ["high", "medium", "low"]}
+        }
+      }
+    },
+    "audit_flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "severity", "claim", "support", "interpretation"],
+        "properties": {
+          "kind": {"enum": ["FACT", "INFERENCE"]},
+          "severity": {"enum": ["high", "medium", "low"]},
+          "claim": {"type": "string"},
+          "support": {"type": "string"},
+          "interpretation": {"type": "string"}
+        }
+      }
+    },
+    "judgment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["work_type", "algorithmic", "engineering", "evaluation", "solid", "oversold", "failure_modes"],
+      "properties": {
+        "work_type": {"type": "string"},
+        "algorithmic": {"type": "number", "minimum": 0, "maximum": 5},
+        "engineering": {"type": "number", "minimum": 0, "maximum": 5},
+        "evaluation": {"type": "number", "minimum": 0, "maximum": 5},
+        "solid": {"type": "string"},
+        "oversold": {"type": "string"},
+        "failure_modes": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "reuse_ideas": {
+      "type": "array",
+      "maxItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "insight", "adaptation", "minimal_experiment", "expected_value", "risk", "venue_fit"],
+        "properties": {
+          "title": {"type": "string"},
+          "insight": {"type": "string"},
+          "adaptation": {"type": "string"},
+          "minimal_experiment": {"type": "string"},
+          "expected_value": {"type": "string"},
+          "risk": {"type": "string"},
+          "venue_fit": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
+    "next_action": {"type": "string"}
+  }
+}

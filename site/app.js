@@ -16,7 +16,7 @@ function element(tag, className, text) {
 
 function renderMetrics(data) {
   $("#paper-count").textContent = data.paper_count;
-  $("#must-read-count").textContent = data.verdict_counts["must-read"] || 0;
+  $("#deep-read-count").textContent = data.deep_read_count || 0;
   $("#campaign-count").textContent = data.campaigns.length;
   const timestamp = new Date(data.generated_at);
   $("#last-updated").textContent = `Updated ${timestamp.toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
@@ -53,27 +53,52 @@ function renderCampaigns(campaigns) {
 
 function paperCard(paper) {
   const card = element("article", "paper-card");
+  const analysis = paper.analysis;
   const top = element("div", "paper-card-top");
-  const verdict = element("span", `verdict ${paper.verdict}`, paper.verdict.replace("-", " "));
-  const score = element("span", "score", Number(paper.scores.total).toFixed(3));
+  const verdictText = analysis
+    ? "research readout"
+    : (paper.verdict === "must-read" ? "deep-read candidate" : paper.verdict.replace("-", " "));
+  const verdict = element("span", `verdict ${paper.verdict}`, verdictText);
+  const score = analysis
+    ? element("span", "readout-badge", "FULL READOUT")
+    : element("span", "score", Number(paper.scores.total).toFixed(3));
   top.append(verdict, score);
 
   const heading = element("h3");
   const link = element("a", "", paper.title);
-  link.href = paper.urls?.paper || "#";
-  link.target = "_blank";
-  link.rel = "noreferrer";
+  link.href = analysis ? `./paper.html?id=${encodeURIComponent(paper.id)}` : (paper.urls?.paper || "#");
+  if (!analysis) {
+    link.target = "_blank";
+    link.rel = "noreferrer";
+  }
   heading.append(link);
 
   const authorText = paper.authors.length > 4 ? `${paper.authors.slice(0, 4).join(", ")} +${paper.authors.length - 4}` : paper.authors.join(", ");
   const authors = element("p", "authors", authorText);
-  const problem = element("p", "paper-problem", paper.summary?.problem || paper.summary?.method || "Summary pending.");
+  const problem = element("p", `paper-problem${analysis ? " de-narrated" : ""}`, analysis?.decision?.de_narrated || paper.summary?.problem || paper.summary?.method || "Summary pending.");
+  if (analysis) {
+    const why = element("p", "paper-why", analysis.decision.why_it_matters);
+    card.append(top, heading, authors, problem, why);
+  } else {
+    card.append(top, heading, authors, problem);
+  }
   const footer = element("div", "paper-footer");
   const chips = element("div", "chips");
   [campaignLabel(paper.campaigns?.[0]), paper.primary_branch].filter(Boolean).forEach((label) => chips.append(element("span", "chip", label)));
-  const evidence = element("span", "evidence", paper.evidence_level || "unverified");
+  const evidence = element("span", "evidence", analysis?.evidence_level || paper.evidence_level || "unverified");
   footer.append(chips, evidence);
-  card.append(top, heading, authors, problem, footer);
+  card.append(footer);
+  if (analysis) {
+    const actions = element("div", "card-actions");
+    const readout = element("a", "readout-link", "Open research readout →");
+    readout.href = `./paper.html?id=${encodeURIComponent(paper.id)}`;
+    const source = element("a", "source-link", "arXiv ↗");
+    source.href = paper.urls?.paper || "#";
+    source.target = "_blank";
+    source.rel = "noreferrer";
+    actions.append(readout, source);
+    card.append(actions);
+  }
   return card;
 }
 
@@ -115,4 +140,3 @@ async function init() {
 $("#search-input").addEventListener("input", (event) => { state.query = event.target.value; renderPapers(); });
 $("#verdict-filter").addEventListener("change", (event) => { state.verdict = event.target.value; renderPapers(); });
 init();
-

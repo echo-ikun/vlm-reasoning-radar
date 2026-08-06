@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A decision-oriented full-paper research readout.">
+    <meta name="theme-color" content="#0f172a">
+    <title>Research Readout · VLM Reasoning Radar</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="page-shell readout-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Back to VLM Reasoning Radar">
+          <span class="brand-mark">VR</span>
+          <span>VLM Reasoning Radar</span>
+        </a>
+        <nav class="topnav" aria-label="Readout navigation">
+          <a href="./#papers">All papers</a>
+          <a id="arxiv-nav" href="#" target="_blank" rel="noreferrer">arXiv ↗</a>
+        </nav>
+      </header>
+
+      <main id="readout-main" class="readout-main" aria-live="polite">
+        <div class="readout-loading">正在装载全文研究解读…</div>
+      </main>
+
+      <footer>
+        <p>Facts, inferences, and ideas are intentionally separated.</p>
+        <div><a href="./">Radar</a><a href="https://github.com/echo-ikun/vlm-reasoning-radar">Source</a></div>
+      </footer>
+    </div>
+    <script src="./paper.js" defer></script>
+  </body>
+</html>

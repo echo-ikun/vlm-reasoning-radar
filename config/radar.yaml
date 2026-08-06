@@ -48,3 +48,14 @@ output:
   git_commit: false
   external_publish: false
 
+deep_read:
+  max_full_papers_per_day: 1
+  max_comparison_papers: 2
+  require_main_text: true
+  require_key_tables: true
+  require_supplement: true
+  verify_claimed_assets: true
+  trace_closest_work: true
+  temp_pdf_directory: tmp/pdfs
+  persist_pdf: false
+  max_idea_candidates: 2

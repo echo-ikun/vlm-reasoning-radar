@@ -11,6 +11,7 @@ from html import escape
 from pathlib import Path
 
 from validate_radar import DEFAULT_DATABASE, DEFAULT_SCHEMA, validate_database
+from validate_analyses import validate_analyses
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -113,6 +114,11 @@ def build_feed(digests: list[Path]) -> str:
 def main() -> int:
     count = validate_database(DEFAULT_SCHEMA, DEFAULT_DATABASE)
     papers = load_papers()
+    analyses = validate_analyses()
+    for paper in papers:
+        analysis = analyses.get(paper["id"])
+        if analysis:
+            paper["analysis"] = analysis
     campaigns = sorted({campaign for paper in papers for campaign in paper.get("campaigns", [])})
     verdict_counts = {
         verdict: sum(1 for paper in papers if paper.get("verdict") == verdict)
@@ -127,6 +133,7 @@ def main() -> int:
     payload = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "paper_count": count,
+        "deep_read_count": len(analyses),
         "campaigns": campaigns,
         "verdict_counts": verdict_counts,
         "latest_digest": latest_digest_payload(),
@@ -149,4 +156,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

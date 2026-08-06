@@ -6,7 +6,7 @@
 - 最值得关注的 campaign：
 - 是否出现潜在撞题或研究窗口：
 
-## Must Read
+## Deep-read Candidates
 
 ### 1. Paper title
 
@@ -19,6 +19,18 @@
 - 局限或可疑点：
 - 为什么现在值得读：
 - Paper / Code / Project：
+
+## Full-paper Research Readout
+
+- 今日主深读：
+- 去叙事化结论：
+- 模型 / 数据 / 输入输出 / 计算预算：
+- Benchmark 审计：
+- 方法溯源：
+- FACT：
+- INFERENCE：
+- IDEA：
+- 下一步行动：
 
 ## Watchlist
 
@@ -45,4 +57,3 @@
 - [ ] 哪篇需要深读？
 - [ ] 哪个方向应提高或降低权重？
 - [ ] 哪个机会值得进入 `opportunity-map.md`？
-

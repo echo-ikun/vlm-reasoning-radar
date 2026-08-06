@@ -23,13 +23,13 @@
   -> DOI / arXiv ID / 标题去重
   -> 摘要初筛与 campaign 归类
   -> 研究机会评分
-  -> Must Read / Watchlist / Rejected
-  -> 必要时下载 PDF 并进入 Zotero
+  -> Deep-read Candidate / Watchlist / Rejected
+  -> 主候选进入全文 Research Readout
   -> 生成每日日报
   -> 每周更新 Opportunity Map
 ```
 
-自动流程默认只写工作区文件，不提交 Git、不发布到外部平台。人工确认后再接 Zotero、GitHub PR、企业微信或 X。
+自动流程不永久保存 PDF、不写 Zotero；校验通过后提交雷达数据与站点，由 GitHub Pages 和 Daily Radar Issue 发布。
 
 ## Website
 
@@ -47,10 +47,13 @@
 | `research-tree.yaml` | 稳定的 VLM Reasoning 主树 |
 | `campaigns/` | 可切换的研究战役配置 |
 | `config/` | 数据源、评分和运行规则 |
-| `schemas/paper.schema.json` | 单篇论文的结构化字段定义 |
+| `schemas/paper.schema.json` | 单篇论文的摘要级结构化字段定义 |
+| `schemas/analysis.schema.json` | 全文深读与研究判断字段定义 |
 | `scripts/validate_radar.py` | 零依赖 JSONL/schema 校验器 |
 | `scripts/build_site.py` | 生成网站数据、日报副本和 RSS |
 | `data/papers.jsonl` | 已收录论文数据库，每行一个 JSON 对象 |
+| `data/analyses/` | 全文 Research Readout |
+| `REVIEW_PROFILE.md` | 个人阅读习惯与研究判断标准 |
 | `digests/` | 每日雷达报告 |
 | `opportunity-map.md` | 每周维护的研究机会地图 |
 | `RUNBOOK.md` | 自动任务的执行和质量规范 |
@@ -63,6 +66,6 @@
 
 - `重点跟踪`：提高该主题、作者、benchmark 和引用邻域的权重。
 - `不相关`：加入负面样本，但不自动扩大排除规则。
-- `深读`：进入 PDF/Zotero 队列。
+- `深读`：读取正文、关键实验表、附录与官方资产，按 `REVIEW_PROFILE.md` 生成站内 Research Readout。
 - `可做`：进入 Opportunity Map，要求补齐最小实验和风险。
 - `拥挤`：保留趋势跟踪，但降低立项优先级。

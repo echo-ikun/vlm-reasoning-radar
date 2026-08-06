@@ -1,0 +1,225 @@
+{
+  "paper_id": "arxiv:2608.01207",
+  "paper_version": "v2 (2026-08-05)",
+  "reviewed_on": "2026-08-06",
+  "evidence_level": "full-paper-checked",
+  "source_scope": [
+    "arXiv v2 full paper",
+    "supplementary tables A1-A11",
+    "claimed official GitHub repository",
+    "four closest-paper abstracts"
+  ],
+  "decision": {
+    "one_liner": "真正有价值的不是 PGS 选择器，而是一个 matched-control 负结果：VLM test-time scaling 的巨大增益可能只是 CoT 与短答案格式不匹配造成的。",
+    "surface_claim": "论文提出 Perturbation-Grounded Selection，通过裁剪、遮罩和轻微视觉扰动后的答案稳定性，为候选答案增加视觉 grounding 分数。",
+    "de_narrated": "作者先做了一个很朴素的多视图重采样器：8 条原图 CoT，加 6 种扰动、每种 4 条短答案，再按频次加权。随后加入同预算 MatchedCtrl，把额外 24 条短答案全部留在原图上。PGS 相对普通多数投票的收益几乎全部被这个控制组吸收，所以论文真正的贡献是控制变量和负结果，而不是新 selector。",
+    "why_it_matters": "任何 VLM inference、agent loop 或 rollout 方法，只要不同分支使用了不同回答格式、token 上限或采样预算，就可能把计算与格式收益包装成算法收益。MatchedCtrl 可以直接变成我们的实验审计模板。",
+    "bottom_line": "值得读，原因是实验方法论而非算法。适合作为 related work 和实验设计 checklist；PGS 本身暂不值得复现。"
+  },
+  "task_fingerprint": {
+    "problem_type": "在不训练新 verifier 的情况下，从多个 VLM 候选答案中选出更视觉 grounded 的答案",
+    "stage": "inference-time selection / evaluation audit",
+    "modalities": ["image", "text question"],
+    "inputs": ["单张图像", "视觉问题", "原图 CoT 候选", "扰动视图短答案"],
+    "outputs": ["规范化短答案", "候选选择结果", "视觉稳定性诊断"],
+    "task_families": ["TextVQA", "multimodal mathematics", "expert multimodal QA", "visual-language-prior stress test"]
+  },
+  "models": [
+    {
+      "name": "Qwen2.5-VL-7B-Instruct",
+      "size": "7B",
+      "role": "headline model and three-seed mechanism analysis",
+      "notes": "所有主表、类别 bootstrap 与 routing 分析以该模型为主。"
+    },
+    {
+      "name": "LLaVA-OneVision-7B",
+      "size": "7B",
+      "role": "matched-budget selector coverage",
+      "notes": "用于证明 MatchedCtrl null 不只出现在一个 checkpoint family；没有同等完整的主机制分析。"
+    }
+  ],
+  "data_ledger": {
+    "training_data": "无训练；方法是 label-free、training-free 的离线/推理时选择规则。",
+    "evaluation_data": [
+      "TextVQA: 300 examples per Qwen seed, OCR and visual text reading",
+      "MATH-Vision: about 299 Qwen / 304 LLaVA examples per seed, visual mathematics",
+      "MMMU: 900 examples per seed, expert multi-discipline multimodal reasoning",
+      "ViLP: 600 examples per seed, paired language-prior versus grounded-answer stress test"
+    ],
+    "new_dataset": false,
+    "new_benchmark": false
+  },
+  "compute_ledger": {
+    "training": "None",
+    "generation_budget": "Default N=8 original-image CoT draws, M=6 perturbation families, K=4 short draws per view; PGS and MatchedCtrl each use N+M*K=32 generations.",
+    "decode": "temperature 0.7, top_p 0.95; CoT max 256 new tokens, short/perturbed max 64 new tokens; seeds 0, 23, 42.",
+    "hardware": "Single NVIDIA RTX 4090 per benchmark-model-seed run.",
+    "reported_cost": "About 1.90-8.07 GPU-hours per benchmark-model-seed row; generation counts are matched, but the paper does not report exact realized tokens or FLOPs."
+  },
+  "method_decomposition": {
+    "pipeline": [
+      "从原图采样 8 条 CoT，并提取规范化最终答案。",
+      "生成 center/saliency crop、background mask、photometric、rotation、rescale 六类视图。",
+      "每个扰动视图采样 4 条无 CoT 短答案，统计候选答案被重新推导的频率。",
+      "将原始投票与扰动支持按 lambda=2 加权，得到 PGS 选择。",
+      "用 MatchedCtrl 将相同 24 条短答案改为在原图采样，隔离视觉扰动和回答格式。"
+    ],
+    "true_delta": "核心新增变量是 format-matched control，以及把 diagnostic image-dependence 与 routing utility 分开验证。PGS 算法本身是输入增强加重复采样加投票的简单组合。",
+    "borrowed_or_prior": [
+      "多样本多数投票来自 self-consistency / test-time compute。",
+      "输入扰动和多视图一致性来自 test-time augmentation、contrastive/consistency decoding。",
+      "VLM verification 弱于 generation 的诊断直接延续 Aha Moment Revisited。",
+      "输出相关性和样本多样性不足延续 Diversity Matters。"
+    ],
+    "hidden_costs": [
+      "普通 MV 只用 8 条 CoT，而 PGS 用 32 次生成；论文的正面对比若不看 MatchedCtrl 会严重高估收益。",
+      "手工扰动需要 saliency crop、mask 和多次图像编码，实际延迟不等于简单的 generation count。",
+      "所谓 label-preserving crop 依赖启发式，没有报告人工核验的标签保持率。",
+      "MatchedCtrl 匹配格式和生成数，但没有报告实际总 token、FLOPs 与 wall-clock 的严格等价。"
+    ]
+  },
+  "benchmark_audit": [
+    {
+      "name": "TextVQA",
+      "capability": "图像文字读取与 OCR grounding",
+      "sample_size": "300 examples per Qwen seed",
+      "metric": "hard match; any-annotator match",
+      "main_result": "Qwen MV 54.4, PGS 86.2, MatchedCtrl 87.6; PGS-MatchedCtrl = -1.3pp, 95% CI [-3.4,+0.8].",
+      "our_read": "+31.8pp 的 headline 几乎完全是短答案格式效应。它反而揭示 TextVQA 对输出格式和答案抽取极其敏感。"
+    },
+    {
+      "name": "MATH-Vision",
+      "capability": "几何图、图表与符号型视觉数学推理",
+      "sample_size": "about 299 Qwen / 304 LLaVA examples per seed",
+      "metric": "hard-match accuracy",
+      "main_result": "Qwen MV 25.6, PGS 26.0, MatchedCtrl 25.3; 类别置信区间均跨 0。",
+      "our_read": "整体接近噪声；不同表格还出现 PGS 26.0 与 25.2 的数值不一致，需要作者或代码解释。"
+    },
+    {
+      "name": "MMMU",
+      "capability": "多学科专家级多模态理解，混合感知型与文本知识型题目",
+      "sample_size": "900 examples per seed",
+      "metric": "hard-match accuracy",
+      "main_result": "Qwen MV 49.5, PGS 50.3, MatchedCtrl 50.1; perception/text-heavy 子类均无显著收益。",
+      "our_read": "扰动稳定性很弱，说明统一的 crop/jitter 很难服务跨学科异质证据。"
+    },
+    {
+      "name": "ViLP",
+      "capability": "语言先验答案与图像 grounded 答案冲突时，模型是否真正依赖视觉",
+      "sample_size": "600 grounded score slots per seed",
+      "metric": "hard-match accuracy and prior-to-grounded recovery",
+      "main_result": "Qwen MV 53.2, PGS 52.3, MatchedCtrl 53.7; PGS 显著更差 -1.4pp, 95% CI [-2.2,-0.6]，只挽救 1.6% 的 MatchedCtrl 错例。",
+      "our_read": "这是最贴合机制假设的 benchmark，却给出反证；因此不能把稳定性 gap 当成 grounded selector。"
+    }
+  ],
+  "assets": {
+    "paper": "https://arxiv.org/abs/2608.01207",
+    "pdf": "https://arxiv.org/pdf/2608.01207",
+    "code_claimed": true,
+    "code_url": "https://github.com/KurbanIntelligenceLab/PGS-Code-Audit-Tooling",
+    "code_verified": false,
+    "code_status": "论文 v2 声称已公开代码与 audit tooling，但 2026-08-06 实际访问返回 Repository not found；当前不可复现。"
+  },
+  "lineage": [
+    {
+      "title": "Self-Consistency Improves Chain of Thought Reasoning in Language Models",
+      "url": "https://arxiv.org/abs/2203.11171",
+      "relationship": "多数投票与重复采样的基础范式",
+      "our_read": "PGS 没有改变 generator，本质是在 self-consistency 的 vote count 上增加多视图短答案权重。",
+      "confidence": "high"
+    },
+    {
+      "title": "Aha Moment Revisited: Are VLMs Truly Capable of Self Verification in Inference-time Scaling?",
+      "url": "https://arxiv.org/abs/2506.17417",
+      "relationship": "直接问题来源：VLM generation-verification gap",
+      "our_read": "该工作先证明多数投票往往优于 self-verification；本论文试图用必须重新看图的信号修补 selection layer。",
+      "confidence": "high"
+    },
+    {
+      "title": "Diversity Matters: Revisiting Test-Time Compute in Vision-Language Models",
+      "url": "https://arxiv.org/abs/2605.30713",
+      "relationship": "并行解释：单模型输出相关性导致 voting 收益弱",
+      "our_read": "Diversity Matters 关注样本多样性；本文新增的不是反驳，而是另一个混淆变量——短答案格式。",
+      "confidence": "high"
+    },
+    {
+      "title": "On Test-Time Scaling for Vision-Language Models",
+      "url": "https://arxiv.org/abs/2606.28864",
+      "relationship": "最近邻审计：不同模型、方法与视觉信息在推理链中的衰减",
+      "our_read": "它提供更广的 method/model grid；本文把其中的 decoding substrate 问题收缩成一个可检验的 MatchedCtrl。",
+      "confidence": "medium"
+    },
+    {
+      "title": "Efficient Test-Time Scaling for Small Vision-Language Models",
+      "url": "https://arxiv.org/abs/2510.03574",
+      "relationship": "输入增强、多视图聚合与共识伪标签的近邻机制",
+      "our_read": "PGS 的扰动重采样并非全新范式；差异在 selection-level 加权与负结果审计，而不是 augmentation 本身。",
+      "confidence": "medium"
+    }
+  ],
+  "audit_flags": [
+    {
+      "kind": "FACT",
+      "severity": "high",
+      "claim": "论文声称公开的官方代码仓库当前不可访问。",
+      "support": "正文 Data and Code Availability 给出 KurbanIntelligenceLab/PGS-Code-Audit-Tooling；2026-08-06 git ls-remote 返回 Repository not found。",
+      "interpretation": "在代码恢复前，paper dumps、扰动实现、答案规范化与 bootstrap 结果无法独立核验。"
+    },
+    {
+      "kind": "FACT",
+      "severity": "medium",
+      "claim": "正文与附录对 Qwen MATH-Vision 的 PGS 数值存在 26.0 与 25.2 的不一致。",
+      "support": "Table 1 报告 26.0；正文 5.2 同样写 26.0；Table A7 的 full/lambda=2 报告 25.2。",
+      "interpretation": "可能来自不同 dump 或重算版本，但论文没有解释，削弱精确复现性。"
+    },
+    {
+      "kind": "FACT",
+      "severity": "medium",
+      "claim": "MATH-Vision 的 Qwen 样本数在 seed 23 为 283，其他 seed 为 299。",
+      "support": "Supplementary Table A3 的 #ex 列。",
+      "interpretation": "若缺失样本并非随机，三 seed 均值和 paired comparison 需要额外说明。"
+    },
+    {
+      "kind": "INFERENCE",
+      "severity": "medium",
+      "claim": "这篇更像 evaluation/control paper，而不是新的 selection algorithm paper。",
+      "support": "PGS 是已有 augmentation、短答案重采样与投票的组合；真正稳定的新结论来自 MatchedCtrl 和 routing null。",
+      "interpretation": "引用价值高于复现价值，适合支撑实验设计和负结果讨论。"
+    }
+  ],
+  "judgment": {
+    "work_type": "Evaluation/control study with a lightweight inference heuristic",
+    "algorithmic": 2.0,
+    "engineering": 2.5,
+    "evaluation": 4.5,
+    "solid": "最 solid 的是把‘信号确实看图’与‘信号能改善决策’拆成 StabilityGap、BlankAblation 和 RoutingTest，并用同格式同预算控制组击穿虚假增益。",
+    "oversold": "标题和前半篇给 PGS 较多算法包装，但作者自己的结果已经说明它不是可用 selector；代码公开声明目前也没有兑现。",
+    "failure_modes": [
+      "两种 7B 开源模型不足以外推到更强模型或多模型 verifier。",
+      "手工扰动可能破坏证据或偏向 OCR/crop-friendly 任务。",
+      "自动 hard match 无法覆盖开放式生成、长答案和 agent trajectory。",
+      "只匹配 generation count，未完全匹配实际 token、视觉编码与 wall-clock。"
+    ]
+  },
+  "reuse_ideas": [
+    {
+      "title": "From Visual Diagnostic to Useful Router",
+      "insight": "image-dependent signal 不等于 decision-useful signal；稳定性 gap 能感知像素，却不能预测何时 PGS 会赢。",
+      "adaptation": "把 perturbation gap 从 selector 改成 abstention/tool-use router，并加入反事实答案更新、证据定位和 model-internal uncertainty 特征。",
+      "minimal_experiment": "在 ViLP 与 TextVQA 上训练一个轻量 router，目标预测 MatchedCtrl 错例或是否需要 crop/tool；与 gap-only、entropy-only 和 oracle 比较 selective accuracy。",
+      "expected_value": "把论文留下的 diagnostic-routing gap 转成真正可用的 agentic decision problem。",
+      "risk": "router 可能只学习 benchmark-specific 错误模式，需要跨数据集校准。",
+      "venue_fit": ["CVPR", "ACL"]
+    },
+    {
+      "title": "Decoding Format as a Visual Intervention",
+      "insight": "TextVQA 从 54.4 跳到约 88 的主要变量不是视觉扰动，而是 CoT 与短答案格式。",
+      "adaptation": "系统研究回答格式如何改变视觉 token 使用、答案抽取和 reasoning faithfulness，而不是把 format 当作无关实现细节。",
+      "minimal_experiment": "控制总 token 和采样数，比较 direct answer、short rationale、long CoT、structured evidence-first 四种格式；同时测准确率、视觉敏感度和 counterfactual update rate。",
+      "expected_value": "能连接 test-time scaling、视觉 groundedness 与后训练格式偏差，研究空间比单纯 PGS 更大。",
+      "risk": "需要证明效应不是 evaluator/answer parser 人为造成。",
+      "venue_fit": ["ACL", "CVPR"]
+    }
+  ],
+  "next_action": "不优先复现 PGS。先把 MatchedCtrl 加入我们所有 VLM inference/agent 实验 checklist，并考虑用 1-2 天完成 Decoding Format as a Visual Intervention 的最小验证。"
+}

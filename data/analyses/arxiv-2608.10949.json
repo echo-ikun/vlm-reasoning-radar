@@ -1,0 +1,220 @@
+{
+  "paper_id": "arxiv:2608.10949",
+  "paper_version": "v1 (2026-08-11)",
+  "reviewed_on": "2026-08-12",
+  "evidence_level": "full-paper-checked",
+  "source_scope": [
+    "arXiv v1 full paper",
+    "main tables and figures",
+    "appendices A-C",
+    "official arXiv asset links",
+    "closest-method descriptions in the paper"
+  ],
+  "decision": {
+    "one_liner": "StreamFlow 的价值不在发明单一新记忆模块，而在把编码前稀疏化、固定容量层级记忆和生成期按需检索串成一个确实降低端到端延迟的因果 streaming 系统。",
+    "surface_claim": "论文提出动态视觉记忆流：中期记忆过滤时间冗余，长期记忆压缩历史，VAS 在模型视觉依赖下降时触发相关记忆注入。",
+    "de_narrated": "每 4 帧设一个完整 I-frame，其余 P-frame 只保留 RGB 残差最大的 50% patch；最近 32 帧直接进入视觉前缀，更早的 GOP 被编码、相似合并到最多 96 个槽位；回答时用当前 token 对视觉上下文的 attention mass 作为开关，最多 5 次检索 4 个 GOP，再由 LoRA compressor 压成 32 个 latent token 插入生成序列。",
+    "why_it_matters": "它把 streaming video 的三个成本点分开处理：什么值得编码、什么值得长期保留、什么时候值得重新暴露给 decoder。这个分解比单一 token pruning 或全历史检索更适合作为我们的系统基线。",
+    "bottom_line": "值得作为 streaming memory 工程基线复现；论文对延迟边界和同骨干控制做得较扎实，但 VAS 触发器本身贡献很小，attention 也只得到弱相关的因果支持。"
+  },
+  "task_fingerprint": {
+    "problem_type": "在严格因果和固定内存下持续处理视频流，并在问题出现后从已观察历史中回答视频问题",
+    "stage": "streaming inference system with a trained memory compressor",
+    "modalities": ["streaming video", "text question"],
+    "inputs": ["按 1 FPS 到达的视频帧", "到其关联结束时间后才揭示的问题", "当前中期记忆", "压缩的长期视觉记忆"],
+    "outputs": ["短答案或多选答案", "动态记忆检索与插入序列"],
+    "task_families": ["real-time visual understanding", "online situational/contextual QA", "long-video multiple-choice QA", "temporal and causal video reasoning"]
+  },
+  "models": [
+    {
+      "name": "Qwen3.5-9B",
+      "size": "9B",
+      "role": "frozen answering backbone",
+      "notes": "回答模型不更新；所有主方法和同骨干控制实验均围绕该模型。"
+    },
+    {
+      "name": "Qwen3.5-9B + LoRA",
+      "size": "9B, LoRA rank 16",
+      "role": "memory compressor",
+      "notes": "训练 compressor LoRA、latent queries 和 projections，用检索到的 4 个 GOP 产生 32 个 latent tokens。"
+    },
+    {
+      "name": "Qwen3.5-27B",
+      "size": "27B",
+      "role": "teacher for evidence-augmented SFT labels",
+      "notes": "根据视频和问题生成 Evidence 与 Answer；困难样本最后可条件于参考答案生成证据。"
+    }
+  ],
+  "data_ledger": {
+    "training_data": "使用 COIN、NeXT-QA、STAR、CLEVRER 官方训练划分和选取的 LLaVA-Video-178K 数据构造 question-conditioned 样本；论文没有报告筛选后的最终训练样本总数。",
+    "evaluation_data": [
+      "StreamingBench: 900 videos, 4,500 human-curated QA pairs, 18 tasks; main streaming benchmark",
+      "MVBench: 20 multiple-choice video tasks spanning static-to-dynamic capabilities",
+      "MLVU: seven multiple-choice long-video tasks across movies, surveillance, egocentric video and cartoons; paper does not report exact evaluated sample count",
+      "VideoMME: 900 videos, 2,700 multiple-choice questions, about 254 hours, split by short/medium/long duration"
+    ],
+    "new_dataset": false,
+    "new_benchmark": false
+  },
+  "compute_ledger": {
+    "training": "Only the memory compressor is SFT-trained with token-level cross-entropy and teacher forcing; answering backbone frozen; LoRA rank 16 on 4 NVIDIA L20X GPUs. Epochs, batch size, final sample count and wall-clock are not reported.",
+    "generation_budget": "1 FPS evaluation; 4-frame GOPs; 32-frame mid-term memory; up to 96 long-term GOP slots; each trigger retrieves 4 GOPs and inserts 32 latent tokens; at most 5 injections separated by at least 8 decoding steps.",
+    "decode": "Greedy decoding in efficiency experiments; VAS threshold 0.10. Questions are revealed only after the associated end timestamp and future frames are excluded.",
+    "hardware": "Training: 4 NVIDIA L20X GPUs. Evaluation hardware is not named in the paper.",
+    "reported_cost": "On RTVU processed records, complete-task latency 7.36s to 3.65s (-50.4%) and peak memory 13.68 to 10.80 GiB (-21.1%); timing excludes disk decoding, model loading, compilation, frame arrival and GOP waiting."
+  },
+  "method_decomposition": {
+    "pipeline": [
+      "把到达的视频流按 4 帧组成 GOP，以第一帧为完整 I-frame。",
+      "在 RGB 像素空间计算其余帧相对 I-frame 的 patch residual，只保留残差最大的 50% P-frame patches，再送入 ViT。",
+      "最近 32 帧作为高保真中期记忆；溢出的稀疏 GOP 经 frozen encoder 编码后进入最多 96 槽位的长期记忆。",
+      "长期记忆满时，合并最相似的相邻 GOP：锚定较早 I-frame，保留后一 GOP 中最不相似 token，并做时间下采样。",
+      "生成每个 token 时计算其对所有可访问视觉 token 的平均 attention mass；低于 0.10 时检索 4 个相关 GOP。",
+      "LoRA compressor 用问题、生成前缀和 learned queries 把检索内容压成 32 个视觉 latents，插入当前生成序列。"
+    ],
+    "true_delta": "相对现有 streaming memory，真正的系统增量是把 pre-ViT 动态 patch 过滤与 generation-time latent injection 联合起来，并补充同 Qwen3.5-9B backbone 的 memory-strategy 控制。VAS 只是一个轻量调度变量，不是主要准确率来源。",
+    "borrowed_or_prior": [
+      "TimeChat-Online 已用相邻帧变化做差分 token dropping。",
+      "FluxMem 已有 short/mid/long hierarchical memory 和相邻冗余合并。",
+      "ReKV、StreamingTOM 等已有固定预算历史检索或按需 memory access。",
+      "learned-query visual compressor 延续 latent resampler/Q-Former 类固定瓶颈。",
+      "基于 cross-attention 估计视觉依赖的诊断信号来自近期视觉 grounding/hallucination 工作。"
+    ],
+    "hidden_costs": [
+      "需要额外一份 9B compressor（虽只训练 LoRA），部署内存与模型加载成本高于单一 frozen backbone。",
+      "每个解码 token 都跨所有层和 attention heads 计算 VAS；论文将其计入 complete-task timing，但没有单独报告开销。",
+      "长期记忆构建仍需对溢出 GOP 做视觉编码；省下的是 P-frame patch，而非完全避免历史编码。",
+      "Qwen3.5-27B teacher 和五个视频数据源引入额外数据与标注成本，最终训练集规模没有公开。"
+    ]
+  },
+  "benchmark_audit": [
+    {
+      "name": "StreamingBench",
+      "capability": "严格因果下的 real-time visual、omni-source 和 contextual understanding",
+      "sample_size": "900 videos, 4,500 QA pairs, 18 tasks; five timestamped questions per video",
+      "metric": "accuracy; CU, OSU, RTVU and overall",
+      "main_result": "StreamFlow 67.73 overall；主表相对不同骨干的 LiveVLM-7B 为 +4.63pp；同 Qwen3.5-9B 控制下相对 StreamingTOM 为 +1.17pp，relative to vanilla +4.47pp。",
+      "our_read": "同骨干控制比 headline 更可信，也说明真正的 memory-policy 增益约 1.17pp，而非 4.63pp。RTVU 的 +5.21pp 相对 vanilla 支持近期高保真记忆的重要性。"
+    },
+    {
+      "name": "MVBench",
+      "capability": "20 类静态到动态的视频理解能力",
+      "sample_size": "20 multiple-choice tasks; exact evaluated item count not stated in this paper",
+      "metric": "mean task accuracy",
+      "main_result": "StreamFlow 68.90；同骨干控制中低于 StreamingTOM 69.00 和 LiveVLM 68.77 附近，论文声称六项中此项排名第二。",
+      "our_read": "不是该方法的优势项，说明 dynamic memory 对普通短/中视频理解没有普遍大收益。"
+    },
+    {
+      "name": "MLVU",
+      "capability": "电影、监控、第一视角和动画等长视频的七类多选理解",
+      "sample_size": "seven tasks; exact evaluated item count not stated in this paper",
+      "metric": "task-level mean accuracy (M-Avg)",
+      "main_result": "75.34，较主表 FluxMem-7B 的 73.10 高 2.24pp；去掉长期记忆时 VideoMME-Long 大幅下降的消融与长程价值一致。",
+      "our_read": "主表存在 9B 对 7B 和不同 evaluation setting 的混杂，论文没有提供 MLVU 的同骨干控制表，因此只能作为辅助证据。"
+    },
+    {
+      "name": "VideoMME",
+      "capability": "跨 11 秒到 1 小时的视频理解，按短、中、长时长拆分",
+      "sample_size": "900 videos, 2,700 questions, about 254 hours",
+      "metric": "multiple-choice accuracy by duration and overall",
+      "main_result": "87.78/70.67/62.11，overall 73.52；同骨干控制下较 ReKV 71.89 高 1.63pp。去掉长期记忆时 Long 从 62.11 降至 51.67。",
+      "our_read": "这是长期记忆最有力的证据；不过测试协议把离线 benchmark 强制改成 causal streaming，需避免与原论文公布的离线分数直接比较。"
+    }
+  ],
+  "assets": {
+    "paper": "https://arxiv.org/abs/2608.10949",
+    "pdf": "https://arxiv.org/pdf/2608.10949",
+    "code_claimed": false,
+    "code_url": null,
+    "code_verified": false,
+    "code_status": "截至 2026-08-12，论文正文和官方 arXiv 页面均未提供代码、项目页、数据处理脚本或模型权重链接。"
+  },
+  "lineage": [
+    {
+      "title": "TimeChat-Online: 80% Visual Tokens are Naturally Redundant in Streaming Videos",
+      "url": "https://arxiv.org/search/?query=TimeChat-Online&searchtype=title",
+      "relationship": "相邻帧变化驱动的 differential token dropping",
+      "our_read": "StreamFlow 的 pre-ViT residual selection 是更细粒度的 patch 版本，并把被移出的历史接入长期记忆。",
+      "confidence": "high"
+    },
+    {
+      "title": "FluxMem: Adaptive Hierarchical Memory for Streaming Video Understanding",
+      "url": "https://arxiv.org/abs/2603.02096",
+      "relationship": "短中长期层级记忆和时空冗余合并的最近邻",
+      "our_read": "StreamFlow 并非首个多尺度 memory；新增点主要是编码前 residual 过滤与生成期 latent injection 的组合。",
+      "confidence": "high"
+    },
+    {
+      "title": "ReKV: Retrieval-Augmented KV Memory for Streaming Video Understanding",
+      "url": "https://arxiv.org/search/?query=ReKV+streaming+video&searchtype=all",
+      "relationship": "固定容量外部历史记忆与 query-relevant retrieval",
+      "our_read": "ReKV 从 KV cache 检索，StreamFlow 存 GOP visual latents 并在生成途中多次插入；差异是 memory substrate 与触发时机。",
+      "confidence": "medium"
+    }
+  ],
+  "audit_flags": [
+    {
+      "kind": "FACT",
+      "severity": "medium",
+      "claim": "主表的 +4.63pp headline 混合了 9B 与 7B 模型及不同帧率；同骨干控制优势仅为 +1.17pp。",
+      "support": "Table 1 对 LiveVLM-7B 为 63.10、StreamFlow-9B 为 67.73；Appendix Table 5 同 Qwen3.5-9B 控制下 StreamingTOM 为 66.56。",
+      "interpretation": "应引用同骨干结果评价 memory mechanism，主表只能说明最终系统水平。"
+    },
+    {
+      "kind": "FACT",
+      "severity": "medium",
+      "claim": "VAS 决定插入时机的独立收益很小。",
+      "support": "Figure 5(b) 中 VAS-guided 81.55，仅比 budget-matched delimiter 和 random 高 0.23、0.49pp；完全不插入则低 1.37pp。",
+      "interpretation": "长期记忆内容与是否插入比精确触发器更重要；VAS 不是主要贡献来源。"
+    },
+    {
+      "kind": "FACT",
+      "severity": "medium",
+      "claim": "训练数据的最终规模、训练轮数、batch size 和时间均未报告。",
+      "support": "Appendix A.3 描述五个源数据集，Table 4 给出 LoRA 和硬件，但没有筛选后样本总数或训练步数。",
+      "interpretation": "无法精确估计复现成本，也难判断 teacher-generated 数据量对结果的贡献。"
+    },
+    {
+      "kind": "INFERENCE",
+      "severity": "medium",
+      "claim": "VAS 仍不是可靠的‘模型正在使用视觉证据’测量。",
+      "support": "matched-vs-shuffled memory 使 correct-answer log-odds 平均 +0.27，但 VAS change 与 grounding gain 仅 Spearman 0.24。",
+      "interpretation": "反事实结果支持长期 memory 有因果作用，但对 VAS 作为逐 token router 的支持较弱。"
+    }
+  ],
+  "judgment": {
+    "work_type": "Streaming systems and memory engineering with a lightweight learned compressor",
+    "algorithmic": 3.0,
+    "engineering": 4.5,
+    "evaluation": 4.0,
+    "solid": "最 solid 的是把效率统计拆为 visual front end、decoder 和 complete task，并在完整路径中计入 compressor、retrieval、VAS 和 post-insertion forward passes；同骨干控制与 shuffled-memory 干预也显著提高可信度。",
+    "oversold": "动态‘when to retrieve’被放在标题级叙事中心，但 VAS 调度只比随机插入高不到 0.5pp；真正承担收益的是 pre-ViT sparsification 和长期记忆可用性。",
+    "failure_modes": [
+      "纯 RGB 残差会把摄像机运动、光照变化和字幕动画当作重要证据，也可能漏掉静态但语义关键的物体。",
+      "相似 GOP 合并可能逐级稀释稀有事件，论文只展示到约 79 分钟案例，未验证真正无界流。",
+      "attention mass 会受插入 token 数量和位置影响，低 VAS 不必然意味着缺失视觉证据。",
+      "同一套 teacher-generated training mix 可能使方法偏向现有 QA 类型，未报告跨领域或开放式 streaming 对话。"
+    ]
+  },
+  "reuse_ideas": [
+    {
+      "title": "Counterfactual Retrieval Router",
+      "insight": "StreamFlow 证明 relevant memory 有用，但 VAS 只与收益弱相关；真正缺的是能预测‘插入后答案会不会改变’的 router。",
+      "adaptation": "把检索触发目标从 attention 低于阈值改成 counterfactual value-of-information：预测 matched memory 相对 shuffled/empty memory 对正确答案 log-odds 或不确定性的增益。",
+      "minimal_experiment": "冻结 StreamFlow memory，用 RTVU 构造 matched、shuffled、empty 三分支标签；训练一个小 router，并与 VAS、entropy、fixed interval、random 在相同 5 次插入和 160 latent-token 预算下比较准确率、延迟与 calibration。",
+      "expected_value": "若能在更少检索下保持准确率，可形成比 attention heuristic 更一般的 agentic memory decision 论文。",
+      "risk": "训练标签需要多分支前向，且 router 可能学习 benchmark-specific answer priors。",
+      "venue_fit": ["CVPR", "ACL"]
+    },
+    {
+      "title": "Semantic-Residual Dual Memory",
+      "insight": "RGB residual 擅长保留运动，却天然忽视静态、低变化但回答关键的证据。",
+      "adaptation": "把 patch budget 拆为 dynamics quota 和 query-semantic quota；前者在线保留变化，后者在问题出现后从被低分过滤的静态区域恢复语义相关 patch。",
+      "minimal_experiment": "在 StreamingBench 将相同 50% P-frame budget 分给 residual-only、semantic-only 和 25%+25% dual selection；专门构造静态文本、静态物体状态与相机运动子集，测 evidence recall、RTVU accuracy 和 VFE latency。",
+      "expected_value": "直接修补 StreamFlow 最明确的机制盲区，并连接主动视觉证据获取与固定预算 streaming。",
+      "risk": "query 在较晚时间才出现时，被删除的 raw frame patch 可能已不可恢复，需要保留廉价低分辨率缓存。",
+      "venue_fit": ["CVPR"]
+    }
+  ],
+  "next_action": "优先复现 StreamFlow 的 system decomposition 而非完整模型：先在现有 streaming codebase 实现 4-frame residual patch selection 和 matched-budget memory insertion，验证端到端延迟；同时用 shuffled-memory 分支评估 router 是否真正检索有用证据。"
+}

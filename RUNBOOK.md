@@ -1,5 +1,7 @@
 # Radar Runbook
 
+> 此文件保留完整质量规范。日常自动化必须先遵循 `DAILY_SCOUT.md`；只有人工点选或每周 Research Sprint 才执行本文第 7–8 步的全文流程，详见 `RESEARCH_SPRINT.md`。
+
 ## 每日任务
 
 1. 读取 `research-tree.yaml`、`config/*.yaml` 和 `campaigns/*.yaml`。
@@ -8,7 +10,7 @@
 4. 先按 arXiv ID、DOI 去重，再使用规范化标题和第一作者做模糊去重。
 5. 为候选论文选择唯一 `primary_branch`，跨维度属性只写入 tags。
 6. 按 `config/radar.yaml` 评分，生成 Deep-read Candidate、Watchlist 和排除统计。摘要级高分表示“值得全文核验”，不表示已经认可论文结论。
-7. 从 Deep-read Candidate 中选择最多 1 篇主论文；严格遵循 `REVIEW_PROFILE.md`，读取全文、关键实验表、附录，并检查作者声称公开的代码、数据和模型是否真实可访问。按需读取最多 2 篇最近邻工作做方法溯源。
+7. Research Sprint 时，从 Deep-read Candidate 中选择最多 1 篇主论文；严格遵循 `REVIEW_PROFILE.md`，读取全文、关键实验表、附录，并检查作者声称公开的代码、数据和模型是否真实可访问。按需读取最多 2 篇最近邻工作做方法溯源。
 8. 临时 PDF 只允许写入 `tmp/pdfs/`，完成分析后删除，不进入论文文件夹或 Git。将深读结果写入 `data/analyses/<paper-id>.json`，并符合 `schemas/analysis.schema.json`。
 9. 将新记录追加到 `data/papers.jsonl`，将日报写入 `digests/YYYY-MM-DD.md`。日报必须区分摘要候选与 Full-paper Research Readout，并将 FACT、INFERENCE、IDEA 分开。
 10. 运行 `python3 scripts/validate_radar.py` 和 `python3 scripts/validate_analyses.py`；校验失败时修复本轮数据，不得留下损坏记录。

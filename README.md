@@ -19,17 +19,20 @@
 ## 工作流
 
 ```text
-发现候选论文
+Daily Scout：发现候选论文
   -> DOI / arXiv ID / 标题去重
   -> 摘要初筛与 campaign 归类
   -> 研究机会评分
   -> Deep-read Candidate / Watchlist / Rejected
-  -> 主候选进入全文 Research Readout
   -> 生成每日日报
-  -> 每周更新 Opportunity Map
+
+Research Sprint（手动或每周）：
+  主候选进入全文 Research Readout
+  -> 形成可证伪的 Idea Candidate
+  -> 更新 Opportunity Map
 ```
 
-自动流程不永久保存 PDF、不写 Zotero；校验通过后提交雷达数据与站点，由 GitHub Pages 和 Daily Radar Issue 发布。
+Daily Scout 不下载 PDF、不写 Zotero；Research Sprint 的临时 PDF 在完成后删除。两条流程分别见 [`DAILY_SCOUT.md`](DAILY_SCOUT.md) 与 [`RESEARCH_SPRINT.md`](RESEARCH_SPRINT.md)。校验通过后提交雷达数据与站点，由 GitHub Pages 和 Daily Radar Issue 发布。
 
 ## Website
 
@@ -57,6 +60,8 @@
 | `digests/` | 每日雷达报告 |
 | `opportunity-map.md` | 每周维护的研究机会地图 |
 | `RUNBOOK.md` | 自动任务的执行和质量规范 |
+| `DAILY_SCOUT.md` | 独立定时运行的轻量每日扫描契约 |
+| `RESEARCH_SPRINT.md` | 按需全文精读与研究提案契约 |
 | `site/` | GitHub Pages 静态前端 |
 
 
